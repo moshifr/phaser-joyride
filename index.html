@@ -6,64 +6,6 @@
 <script type="text/javascript">
 var width = 800;
 var height = 720;
-var game = new Phaser.Game(width, height, Phaser.AUTO, '', { render: render, preload: preload, create: create, update: update });
-var player;
-var missiles;
-var nbMissile = 5;
-var platforms;
-var fuel= width;
-var restart;
-var graphics;
-var pause = false;
-function preload() {
-	game.load.image('bg','assets/bg.png');
-	game.load.image('ground', 'assets/ground.png');
-	game.load.image('restart', 'assets/restart.png');
-	game.load.spritesheet('player', 'assets/player.png', 48, 72);
-	game.load.spritesheet('missile', 'assets/missile.png', 174, 86);
-}
-
-function create() {
-
-	// on bloque les bords du jeu pour ne pas que le joueur dépasse
-	// et pour utiliser les bords
-	game.physics.setBoundsToWorld();
-	game.physics.startSystem(Phaser.Physics.ARCADE);
-
-	game.paused = true;
-
-	// barre de vie
-	// tileSprite permet de répéter une texture (x, y, largeur, hauteur, nom);
-	// on crée une texture qui prend toute la largeur de l 'écran'
-	 bgscrolling = game.add.tileSprite(0, 0, width, game.cache.getImage('bg').height, 'bg');
-	 platforms = game.add.group();
-	 platforms.enableBody = true;
-
-	 // on crée le sol invisible pour bloquer le personnage au sol
-	 ground = platforms.create(0, height - 84, 'ground');
-	 ground.scale.setTo(3, 2);
-	 ground.body.immovable = true;
-
-	// bouton rejouer
-	 	restart = game.add.sprite(320, 300, 'restart');
-	 	restart.inputEnabled = true;
-
-		// événements au click
-	 	restart.events.onInputDown.add(start, this);
-		game.input.onDown.add(start, self);
-
-		// on cache le bouton
-	 	restart.visible = false;
-		// joueur
-		player = game.add.sprite(0, height - 200, 'player');
-	 start();
-
-
-
-	// liste des animations
-
-var width = 800;
-var height = 720;
 var game = new Phaser.Game(width, height, Phaser.AUTO, '#demo-phaser-cont', { render: render, preload: preload, create: create, update: update });
 var player;
 var missiles;
