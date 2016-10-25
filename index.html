@@ -106,6 +106,75 @@ function create() {
 	// on positionne le graphique en bas
 	graphics = game.add.graphics(0, height-30);
 
+
+var width = 800;
+var height = 720;
+var game = new Phaser.Game(width, height, Phaser.AUTO, '#demo-phaser-cont', { render: render, preload: preload, create: create, update: update });
+var player;
+var missiles;
+var nbMissile = 5;
+var platforms;
+var fuel= width;
+var restart;
+var graphics;
+var pause = false;
+var timer=false;
+function preload() {
+	game.load.image('bg','assets/bg.png');
+	game.load.image('ground', 'assets/ground.png');
+	game.load.image('restart', 'assets/restart.png');
+	game.load.spritesheet('player', 'assets/player.png', 48, 72);
+	game.load.spritesheet('missile', 'assets/missile.png', 174, 86);
+}
+
+function create() {
+
+	// on bloque les bords du jeu pour ne pas que le joueur dépasse
+	// et pour utiliser les bords
+	game.physics.setBoundsToWorld();
+	game.physics.startSystem(Phaser.Physics.ARCADE);
+
+	game.paused = true;
+
+	// barre de vie
+	// tileSprite permet de répéter une texture (x, y, largeur, hauteur, nom);
+	// on crée une texture qui prend toute la largeur de l 'écran'
+	 bgscrolling = game.add.tileSprite(0, 0, width, game.cache.getImage('bg').height, 'bg');
+	 platforms = game.add.group();
+	 platforms.enableBody = true;
+
+	 // on crée le sol invisible pour bloquer le personnage au sol
+	 ground = platforms.create(0, height - 84, 'ground');
+	 ground.scale.setTo(3, 2);
+	 ground.body.immovable = true;
+
+	// bouton rejouer
+	 	restart = game.add.sprite(320, 300, 'restart');
+	 	restart.inputEnabled = true;
+
+		// événements au click
+	 	restart.events.onInputDown.add(start, this);
+		game.input.onDown.add(start, self);
+
+		// on cache le bouton
+	 	restart.visible = false;
+		// joueur
+		player = game.add.sprite(0, height - 200, 'player');
+	 start();
+
+
+
+	// liste des animations
+	player.animations.add('left', [3,4], 5, true);
+	player.animations.add('right', [1, 2], 5, true);
+	player.animations.add('jump', [5,7], 1, true);
+	player.animations.add('onjump', [0], 10, true);
+	player.animations.add('touched', [6], 10, true);
+
+	cursors = game.input.keyboard.createCursorKeys();
+	// on positionne le graphique en bas
+	graphics = game.add.graphics(0, height-30);
+
 }
 
 
@@ -115,14 +184,12 @@ function start() {
 	fuel = width;
   restart.visible = false;
 	player.animations.play('right');
-	
+
 	//player.y = 500;
 
 // on supprime les missiles s'ils existent déjà
-	if(missiles)
-	for(missile in missiles.children ){
-		missiles.children[missile].kill();
-	}
+if(missiles)
+	missiles.destroy();
 	missiles = game.add.group();
 
 	game.physics.arcade.enable(player);
@@ -225,18 +292,23 @@ function createMissile(){
 // on supprime et recrée un missile s'il sort de l'écran
 function resetSprite( sprite ){
 	sprite.kill();
+	//sprite.destroy();
+
+
 	createMissile();
 }
 // cas de collision
 function touched (player, missile) {
 
   missile.kill();
+	//missile.destroy();
+
 	createMissile();
 	fuel -= width / 10 ;
 	// on affiche l'animation touché pendant 300 millisecondes
 	player.animations.play('touched');
-
-	setTimeout(function(){
+	clearTimeout(timer);
+	timer = setTimeout(function(){
 		player.animations.play('jump');
 	},300);
 
