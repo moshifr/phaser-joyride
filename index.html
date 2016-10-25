@@ -9,6 +9,7 @@
     <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
 
     <title>Phaser-joyride by moshifr</title>
+    <script src="js/phaser.min.js"></script>
   </head>
 
   <body>
@@ -30,6 +31,224 @@
       <section id="main_content">
         <h3>
 <a id="demo-phaser" class="anchor" href="#demo-phaser" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Demo Phaser.</h3>
+        
+        <div id="demo-phaser-cont">
+        
+        </div>
+        
+<script type="text/javascript">
+var width = 800;
+var height = 720;
+var game = new Phaser.Game(width, height, Phaser.AUTO, '#demo-phaser-cont', { render: render, preload: preload, create: create, update: update });
+var player;
+var missiles;
+var nbMissile = 5;
+var platforms;
+var fuel= width;
+var restart;
+var graphics;
+var pause = false;
+function preload() {
+	game.load.image('bg','assets/bg.png');
+	game.load.image('ground', 'assets/ground.png');
+	game.load.image('restart', 'assets/restart.png');
+	game.load.spritesheet('player', 'assets/player.png', 48, 72);
+	game.load.spritesheet('missile', 'assets/missile.png', 174, 86);
+}
+
+function create() {
+
+	// on bloque les bords du jeu pour ne pas que le joueur dépasse
+	// et pour utiliser les bords
+	game.physics.setBoundsToWorld();
+	game.physics.startSystem(Phaser.Physics.ARCADE);
+
+	game.paused = true;
+
+	// barre de vie
+	// tileSprite permet de répéter une texture (x, y, largeur, hauteur, nom);
+	// on crée une texture qui prend toute la largeur de l 'écran'
+	 bgscrolling = game.add.tileSprite(0, 0, width, game.cache.getImage('bg').height, 'bg');
+	 platforms = game.add.group();
+	 platforms.enableBody = true;
+
+	 // on crée le sol invisible pour bloquer le personnage au sol
+	 ground = platforms.create(0, height - 84, 'ground');
+	 ground.scale.setTo(3, 2);
+	 ground.body.immovable = true;
+
+	// bouton rejouer
+	 	restart = game.add.sprite(320, 300, 'restart');
+	 	restart.inputEnabled = true;
+
+		// événements au click
+	 	restart.events.onInputDown.add(start, this);
+		game.input.onDown.add(start, self);
+
+		// on cache le bouton
+	 	restart.visible = false;
+		// joueur
+		player = game.add.sprite(0, height - 200, 'player');
+	 start();
+
+
+
+	// liste des animations
+	player.animations.add('left', [3,4], 5, true);
+	player.animations.add('right', [1, 2], 5, true);
+	player.animations.add('jump', [5,7], 1, true);
+	player.animations.add('onjump', [0], 10, true);
+	player.animations.add('touched', [6], 10, true);
+
+	cursors = game.input.keyboard.createCursorKeys();
+	// on positionne le graphique en bas
+	graphics = game.add.graphics(0, height-30);
+
+}
+
+
+function start() {
+	// si je leu est en pause, on le relance
+	if (game.paused) {
+	fuel = width;
+  restart.visible = false;
+	player.animations.play('right');
+	player.x = 0;
+	//player.y = 500;
+
+// on supprime les missiles s'ils existent déjà
+	if(missiles)
+	for(missile in missiles.children ){
+		missiles.children[missile].kill();
+	}
+	missiles = game.add.group();
+
+	game.physics.arcade.enable(player);
+	player.body.gravity.y = 300;
+	player.body.collideWorldBounds = true;
+	// on active les éléments physique pour ce groupe (et ses objets)
+	missiles.enableBody = true;
+	missiles.physicsBodyType = Phaser.Physics.ARCADE;
+
+	// on crée par défaut les missiles
+	for( var i =  0; i< nbMissile; i++)
+	{
+		createMissile();
+	}
+
+		game.paused = false;
+
+	}
+
+}
+
+function update() {
+	// barre d'énergie
+	graphics.beginFill(0xFFFF0B);
+	 healthbg = graphics.drawRect(0, 0, width, 30);
+  graphics.beginFill(0xFF0000);
+	healthbar = graphics.drawRect(0, 0, fuel, 30);
+
+	game.physics.arcade.collide(player, ground);
+	// si collision
+	game.physics.arcade.overlap(player, missiles, touched, null, this);
+	// on fait défiler grace a tilePosition pour faire l'effet scrolling
+	bgscrolling.tilePosition.x -= 2;
+
+
+	if (cursors.up.isDown)
+	 {
+			 //  Move to the left
+			 player.body.velocity.y = -250;
+			 fuel -= 1;
+			 player.animations.play('onjump');
+	 }
+	else if (cursors.left.isDown)
+	 {
+			 //  Move to the left
+			 player.body.velocity.x = -150;
+
+			 player.animations.play('left');
+	 }
+	 else if (cursors.right.isDown)
+	 {
+			 //  Move to the right
+			 player.body.velocity.x = 150;
+
+			 player.animations.play('right');
+	 }
+	 else
+	 {
+		 // si le jeu n'est pas en pause on fait jouer les animations
+		 if(!game.paused && typeof player.animations.currentAnim != "undefined" && player.animations.currentAnim.name != "touched"){
+			 //  Stand still
+			 if(player.body.touching.down){
+			 	player.animations.play('right');
+			}
+			else{
+ 			 player.animations.play('jump');
+			}
+
+			player.body.velocity.x = 0;
+		}
+
+	 }
+
+	 if(fuel <= 0){
+		 game.paused= true;
+		 restart.visible = true;
+	 }
+
+
+}
+//  création des missiles
+function createMissile(){
+	var y = Math.random() *  height - 86; // 86 hauteur du missile
+	if(y < 0)
+	{
+		y = 0;
+	}
+	var missile = missiles.create( width + Math.random() , y,'missile');
+	game.physics.arcade.enable(missile);
+  missile.body.velocity.x = - 50 - Math.random() * 200;
+  missile.autoCull = true;
+  missile.animations.add('missile', [0,1], 3, true);
+  missile.animations.play('missile');
+
+	missile.checkWorldBounds = true;
+	// si le missile sort de l'écran
+  missile.events.onOutOfBounds.add(resetSprite, this);
+
+}
+// on supprime et recrée un missile s'il sort de l'écran
+function resetSprite( sprite ){
+	sprite.kill();
+	createMissile();
+}
+// cas de collision
+function touched (player, missile) {
+
+  missile.kill();
+	createMissile();
+	fuel -= width / 10 ;
+	// on affiche l'animation touché pendant 300 millisecondes
+	player.animations.play('touched');
+
+	setTimeout(function(){
+		player.animations.play('jump');
+	},300);
+
+}
+
+function render() {
+
+	    game.debug.text('Temps écoulé : ' + Math.round(this.game.time.totalElapsedSeconds()), 32, 32);
+
+
+
+}
+
+</script>
       </section>
     </div>
 
